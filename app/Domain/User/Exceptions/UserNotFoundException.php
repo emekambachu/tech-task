@@ -2,7 +2,9 @@
 
 namespace App\Domain\User\Exceptions;
 
-class UserNotFoundException
-{
+use Exception;
 
+class UserNotFoundException extends Exception
+{
+    //
 }
