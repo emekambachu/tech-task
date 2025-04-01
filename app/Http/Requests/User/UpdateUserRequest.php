@@ -21,7 +21,7 @@ class UpdateUserRequest extends FormRequest
             'name'         => 'required|string|max:255',
             'surname'      => 'required|string|max:255',
             'email'        => 'required|string|email|max:255|unique:users,email,' . $this->route('id'),
-            'phone'        => 'required|string|max:20',
+            'phone'        => 'required|string|max:20|unique:users,phone,' . $this->route('id'),
             'country'      => 'required|string',
             'gender'       => 'required|string|in:male,female',
             'password'     => 'nullable|string|min:6|confirmed',
@@ -45,8 +45,9 @@ class UpdateUserRequest extends FormRequest
         ], 422));
     }
 
-    protected function prepareForValidation(): void
-    {
-        Log::info('Request data:', $this->all());
-    }
+    // for testing purposes
+//    protected function prepareForValidation(): void
+//    {
+//        Log::info('Request data:', $this->all());
+//    }
 }

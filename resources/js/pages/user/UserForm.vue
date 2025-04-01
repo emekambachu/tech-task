@@ -35,6 +35,16 @@ let form = reactive({
     password_confirmation: '',
 });
 
+const clearAllFields = () => {
+  Object.keys(form).forEach((key) => {
+    if (key !== 'selfie') {
+      form[key] = '';
+    }else{
+      form[key] = null;
+    }
+  })
+}
+
 const submitForm = async () => {
     errors.value = {};
     submitted.value = false;
@@ -42,7 +52,6 @@ const submitForm = async () => {
 
     try {
         const formData = new FormData();
-        formData.append('_method', 'PUT');
         for (const key in form) {
             if(form[key] !== null) {
                 formData.append(key, form[key]);
@@ -50,6 +59,8 @@ const submitForm = async () => {
         }
 
         if(props.user) {
+          // put not working with axios, so i had to spoof it
+          formData.append('_method', 'PUT');
           let response = await apiClient.post(`/users/${user.value.id}`, formData);
           if(response.data.success){
             submitted.value = true;
@@ -61,6 +72,7 @@ const submitForm = async () => {
           if(response.data.success){
             submitted.value = true;
             emit('create-user', response.data.user);
+            clearAllFields();
           }
 
         }
@@ -70,6 +82,7 @@ const submitForm = async () => {
             errors.value = error.response.data.errors;
         }
         if (error.response) {
+            errors.value['general'] = ['An error occurred, please try again'];
             handleErrors.hideErrorInProduction("ERROR_RESPONSE", error.response)
         }
     }
@@ -260,7 +273,7 @@ onBeforeMount(() => {
                     class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" aria-describedby="user_avatar_help" id="user_avatar" type="file"
                 >
 
-              <div v-if="!user && form.selfie !== null && errors?.selfie.length === 0" class="flex">
+              <div v-if="!user && form.selfie !== null && errors?.selfie?.length === 0" class="flex">
                 <img :src="imagePreview" width="100"/>
                 <span @click="form.selfie = null"
                       class="pl-1 text-red-500 cursor-pointer font-bold"
@@ -298,6 +311,15 @@ onBeforeMount(() => {
                   placeholder="Write your thoughts here..."></textarea>
             </div>
 
+            <p v-if="submitted" class="font-bold bg-emerald-500 text-amber-50 p-1 rounded-b-md text-center">
+              <span v-if="user">
+                Updated successfully
+              </span>
+              <span v-else>
+                Created successfully
+              </span>
+            </p>
+
             <button v-if="!loading"
                     type="submit"
                     class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
@@ -308,6 +330,7 @@ onBeforeMount(() => {
                 Create
               </span>
             </button>
+
             <AnimateSpinIcon v-else />
         </form>
     </div>

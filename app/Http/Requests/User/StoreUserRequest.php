@@ -19,7 +19,7 @@ class StoreUserRequest extends FormRequest
             'name'         => 'required|string|max:255',
             'surname'      => 'required|string|max:255',
             'email'        => 'required|email|unique:users,email',
-            'phone'        => 'required|string|max:20',
+            'phone'        => 'required|string|max:20|unique:users,phone',
             'country'      => 'required|string',
             'gender'       => 'required|string|in:male,female',
             'password'     => 'required|string|min:6|confirmed',
