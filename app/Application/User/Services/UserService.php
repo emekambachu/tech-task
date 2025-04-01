@@ -8,9 +8,10 @@ use App\Domain\User\Exceptions\UserNotFoundException;
 use App\Application\User\Commands\CreateUserCommand;
 use App\Application\User\Commands\UpdateUserCommand;
 use App\Application\User\Commands\DeleteUserCommand;
+use App\Domain\User\Repositories\UserResponseInterface;
 use Illuminate\Http\JsonResponse;
 
-class UserService
+class UserService implements UserResponseInterface
 {
     private UserRepositoryInterface $userRepository;
     public function __construct(UserRepositoryInterface $userRepository)
@@ -86,6 +87,6 @@ class UserService
         return response()->json([
             'success' => false,
             'message' => $message,
-        ]);
+        ],500);
     }
 }
