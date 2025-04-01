@@ -76,7 +76,6 @@ class UserController extends Controller
     }
 
     /**
-     * @throws UserNotFoundException
      */
     public function update(UpdateUserRequest $request, int $id): JsonResponse
     {
@@ -122,15 +121,15 @@ class UserController extends Controller
     }
 
     /**
-     * @throws UserNotFoundException
      */
     public function destroy(int $id): JsonResponse
     {
         try{
-
             $command = new DeleteUserCommand($id);
             $this->userService->deleteUser($command);
-            return response()->json(null, 204);
+            return response()->json([
+                'success' => true,
+            ]);
 
         }catch (\Exception $e){
             Log::error($e->getMessage());

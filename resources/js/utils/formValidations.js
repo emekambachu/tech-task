@@ -47,15 +47,12 @@ const formValidations = {
     },
 
     validateFileType(file, allowedExtensions = []) {
-        console.log("inside validation service", file, allowedExtensions);
         const fileName = file.name;
         const fileExtension = fileName.split('.').pop().toLowerCase();
-
         return allowedExtensions.includes(fileExtension);
     },
 
     validateFileSize(file, maxSize) {
-        // Validate Image
         return file.size <= maxSize;
     },
 

@@ -27,9 +27,12 @@ const getUsers = async () => {
     loading.value = false;
 };
 
+const updateUserList = (event) => {
+    users.value.unshift(event);
+}
+
 const deleteUser = (event) => {
-    console.log("Emit Delete user", event)
-    users.value = users.value.filter(user => user.id !== event.id);
+    users.value = users.value.filter(user => user.id !== event);
 }
 
 onBeforeMount(() => {
@@ -95,7 +98,9 @@ onBeforeMount(() => {
         title="Create User"
         :show="showForm"
         @close-modal="showForm = false">
-        <UserForm />
+        <UserForm
+            @create-user="updateUserList"
+        />
     </SlideOverModal>
 
 </template>

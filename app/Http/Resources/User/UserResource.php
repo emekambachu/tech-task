@@ -4,9 +4,19 @@ namespace App\Http\Resources\User;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Storage;
 
 class UserResource extends JsonResource
 {
+    private function getSelfieImage(): ?string
+    {
+        $selfie = $this->getSelfie();
+        if (!empty($selfie) && !str_starts_with($selfie, 'http')) {
+            $selfie = Storage::url($selfie);
+        }
+        return $selfie;
+    }
+
     /**
      * Transform the resource into an array.
      *
@@ -22,7 +32,7 @@ class UserResource extends JsonResource
             'phone' => $this->getPhone(),
             'country' => $this->getCountry(),
             'gender' => $this->getGender(),
-            'selfie' => $this->getSelfie(),
+            'selfie' => $this->getSelfieImage(),
             'introduction' => $this->getIntroduction(),
         ];
     }

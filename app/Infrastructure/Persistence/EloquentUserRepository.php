@@ -5,6 +5,7 @@ namespace App\Infrastructure\Persistence;
 use App\Domain\User\Repositories\UserRepositoryInterface;
 use App\Domain\User\Entities\User as DomainUser;
 use App\Models\User as EloquentUser;
+use Illuminate\Support\Facades\Storage;
 
 class EloquentUserRepository implements UserRepositoryInterface
 {
@@ -108,6 +109,11 @@ class EloquentUserRepository implements UserRepositoryInterface
     public function delete(DomainUser $user): bool
     {
         $eloquentUser = EloquentUser::find($user->getId());
-        return $eloquentUser ? $eloquentUser->delete() : false;
+        // delete the selfie file if it exists
+        if ($eloquentUser && $eloquentUser->selfie && Storage::exists($eloquentUser->selfie)) {
+            Storage::delete($eloquentUser->selfie);
+        }
+
+        return $eloquentUser->delete() ?? false;
     }
 }

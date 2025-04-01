@@ -13,24 +13,29 @@ const loading = ref(false);
 const deleted = ref(false);
 
 const props = defineProps({
-    user: {
-        type: Object,
-        required: true
-    },
-    index: {
-        type: Number,
-        required: true
-    }
+  user: {
+    type: Object,
+    required: true
+  },
+  index: {
+    type: Number,
+    required: true
+  }
 });
 
+const user = ref(props.user);
 const emit = defineEmits(['delete-user']);
+
+const updateUser = (event) => {
+  user.value = event;
+}
 
 const deleteUser = async () => {
   loading.value = true;
-  await apiClient.delete(`/users/${props.user.id}`).then((response) => {
+  await apiClient.delete(`/users/${user.value.id}`).then((response) => {
     if (response.data.success) {
       deleted.value = true;
-      emit("delete-user", props.user.id);
+      emit('delete-user', user.value.id);
     }
   }).catch((error) => {
     console.log(error);
@@ -82,7 +87,7 @@ const deleteUser = async () => {
     >
         <UserForm
             :user="user"
-            @close-modal="showEditForm = false"
+            @update-user="updateUser"
         />
     </SlideOverModal>
 

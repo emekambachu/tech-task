@@ -3,37 +3,72 @@ import {ref, reactive, onBeforeMount} from 'vue';
 import handleErrors from "@/js/utils/handleErrors.js";
 import apiClient from "@/js/utils/apiClient.js";
 import formValidations from "@/js/utils/formValidations.js";
+import AnimateSpinIcon from "@/js/components/Icons/AnimateSpinIcon.vue";
 
 const loading = ref(false);
+const submitted = ref(false);
 const countries = ref([]);
 let errors = ref({});
 let imagePreview = ref(null);
 
+const props = defineProps({
+    user: {
+        type: Object,
+        required: false
+    }
+});
+
+const user = ref(props.user);
+
+const emit = defineEmits(['create-user', 'update-user']);
+
 let form = reactive({
-    name: '',
-    surname: '',
-    email: '',
-    phone: '',
-    country: '',
-    gender: '',
+    name: props.user?.name || '',
+    surname: props.user?.surname || '',
+    email: props.user?.email || '',
+    phone: props.user?.phone || '',
+    country: props.user?.country || '',
+    gender: props.user?.gender || '',
     selfie: null,
-    introduction: '',
+    introduction: props.user?.introduction || '',
     password: '',
     password_confirmation: '',
 });
 
 const submitForm = async () => {
+    errors.value = {};
+    submitted.value = false;
     loading.value = true;
+
     try {
         const formData = new FormData();
+        formData.append('_method', 'PUT');
         for (const key in form) {
-            formData.append(key, form[key]);
+            if(form[key] !== null) {
+                formData.append(key, form[key]);
+            }
         }
-        const response = await apiClient.post('/users', formData);
-        if(response.data.success){
-            console.log(response.data.message);
+
+        if(props.user) {
+          let response = await apiClient.post(`/users/${user.value.id}`, formData);
+          if(response.data.success){
+            submitted.value = true;
+            emit('update-user', response.data.user);
+          }
+
+        }else{
+          let response = await apiClient.post('/users', formData);
+          if(response.data.success){
+            submitted.value = true;
+            emit('create-user', response.data.user);
+          }
+
         }
+
     } catch (error) {
+        if (error.response?.status === 422) {
+            errors.value = error.response.data.errors;
+        }
         if (error.response) {
             handleErrors.hideErrorInProduction("ERROR_RESPONSE", error.response)
         }
@@ -54,23 +89,29 @@ const fetchCountries = async () => {
 }
 
 const uploadSelfie = (event) => {
-  let validateFileType = formValidations.validateFileType(event.target.files[0], ['jpg', 'jpeg', 'png']);
-  if(!validateFileType){
-    errors.value['selfie'] = ['Incorrect file format. allowed: jpg, jpeg, png'];
+  let file = event.target.files[0];
+
+  let validateFileType = formValidations.validateFileType(file, ['jpg', 'jpeg', 'png']);
+  if (!validateFileType) {
+    errors.value['selfie'] = ['Incorrect file format. Allowed: jpg, jpeg, png'];
     form.selfie = null;
     return false;
+  } else {
+    errors.value['selfie'] = [];
   }
 
-  let validateFileSize = formValidations.validateFileSize(event.target.files[0], 2000000);
-  if(!validateFileSize){
-    errors.value['selfie'] = ['File too large, 2mb max'];
+  let validateFileSize = formValidations.validateFileSize(file, 2000000);
+  if (!validateFileSize) {
+    errors.value['selfie'] = ['File too large, 2MB max'];
     form.selfie = null;
     return false;
+  } else {
+    errors.value['selfie'] = [];
   }
 
-  //Assign image and path to this variable
-  form.selfie = event.target.files[0];
-  imagePreview.value = URL.createObjectURL(event.target.files[0]);
+  // Assign image and path to this variable
+  form.selfie = file;
+  imagePreview.value = URL.createObjectURL(file);
 }
 
 const validatePhone = (event) => {
@@ -79,10 +120,10 @@ const validatePhone = (event) => {
   }
   let valid = formValidations.validateMobileNumber(event.target.value);
   if (!valid) {
-    errors.value.mobile = ["Wrong format, international mobile number required"];
+    errors.value['mobile'] = ["Wrong format, international mobile number required"];
     return false;
   }else{
-    errors.value.mobile = [];
+    errors.value['mobile'] = [];
     return true;
   }
 }
@@ -108,11 +149,8 @@ onBeforeMount(() => {
     <div>
 
       <div v-if="Object.keys(errors).length" class="card">
-        <p>
-          <span class="text-red-500 font-bold">Error:</span>
-          <span v-for="(error, index) in errors" :key="index" class="text-red-500">
-            {{ error }}
-          </span>
+        <p v-for="(error, index) in errors" :key="index" class="text-red-500">
+          {{ error[0] }}
         </p>
       </div>
 
@@ -148,8 +186,10 @@ onBeforeMount(() => {
             </div>
 
             <div class="mb-5">
-                <label for="phone" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Phone</label>
-                <input v-model="form.phone" @change="validatePhone($event)" type="email" id="email" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="name@flowbite.com" required />
+                <label for="phone" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                  Phone (International Format)
+                </label>
+                <input v-model="form.phone" @change="validatePhone($event)" type="text" id="phone" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="name@flowbite.com" required />
                 <p v-if="errors.phone" class="text-rose-300">
                   {{ errors.phone[0] }}
                 </p>
@@ -189,7 +229,9 @@ onBeforeMount(() => {
                 <input
                     v-model="form.password"
                     @change="validatePassword($event, form.password, form.password_confirmation)"
-                    type="password" id="password" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required />
+                    type="password" id="password" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                    :required="!user"
+                />
               <p v-if="errors.password"
                  class="text-rose-300 font-bold">
                 {{ errors.password[0] }}
@@ -198,18 +240,38 @@ onBeforeMount(() => {
 
             <div class="mb-5">
                 <label for="password_confirmation" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Your password</label>
-                <input v-model="form.password_confirmation" type="password" id="password_confirmation" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required />
+                <input
+                    v-model="form.password_confirmation"
+                    @change="validatePassword($event, form.password, form.password_confirmation)"
+                    type="password"
+                    id="password_confirmation"
+                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                    :required="!user"
+                />
             </div>
 
             <div class="mb-5">
-                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white" for="user_avatar">Upload Selfie (2mb Max)</label>
+                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white" for="user_avatar">
+                  Upload Selfie (2mb Max)
+                </label>
                 <input
                     accept="image/*"
                     @change="uploadSelfie($event)"
                     class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" aria-describedby="user_avatar_help" id="user_avatar" type="file"
                 >
 
-              <div v-if="form.selfie !== null && !errors?.selfie" class="flex">
+              <div v-if="!user && form.selfie !== null && errors?.selfie.length === 0" class="flex">
+                <img :src="imagePreview" width="100"/>
+                <span @click="form.selfie = null"
+                      class="pl-1 text-red-500 cursor-pointer font-bold"
+                      title="Remove image">
+                  x
+                </span>
+              </div>
+              <div v-else-if="user && user.selfie !== null" class="flex">
+                <img :src="user.selfie" width="100"/>
+              </div>
+              <div v-else-if="user?.selfie !== null && form.selfie !== null">
                 <img :src="imagePreview" width="100"/>
                 <span @click="form.selfie = null"
                       class="pl-1 text-red-500 cursor-pointer font-bold"
@@ -236,7 +298,17 @@ onBeforeMount(() => {
                   placeholder="Write your thoughts here..."></textarea>
             </div>
 
-            <button type="submit" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Submit</button>
+            <button v-if="!loading"
+                    type="submit"
+                    class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
+              <span v-if="user">
+                Update
+              </span>
+              <span v-else>
+                Create
+              </span>
+            </button>
+            <AnimateSpinIcon v-else />
         </form>
     </div>
 
