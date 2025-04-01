@@ -8,11 +8,11 @@ use App\Domain\User\Exceptions\UserNotFoundException;
 use App\Application\User\Commands\CreateUserCommand;
 use App\Application\User\Commands\UpdateUserCommand;
 use App\Application\User\Commands\DeleteUserCommand;
+use Illuminate\Http\JsonResponse;
 
 class UserService
 {
     private UserRepositoryInterface $userRepository;
-
     public function __construct(UserRepositoryInterface $userRepository)
     {
         $this->userRepository = $userRepository;
@@ -64,6 +64,9 @@ class UserService
         return $this->userRepository->update($user);
     }
 
+    /**
+     * @throws UserNotFoundException
+     */
     public function deleteUser(DeleteUserCommand $command): bool
     {
         $user = $this->userRepository->find($command->id);
@@ -76,5 +79,13 @@ class UserService
     public function listUsers(): array
     {
         return $this->userRepository->findAll();
+    }
+
+    public function responseError(string $message): JsonResponse
+    {
+        return response()->json([
+            'success' => false,
+            'message' => $message,
+        ]);
     }
 }

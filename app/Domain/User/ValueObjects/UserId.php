@@ -8,7 +8,7 @@ class UserId
 
     public function __construct(int $value)
     {
-        // Optionally add validation for the identifier.
+        // Optionally, add validation for the identifier.
         $this->value = $value;
     }
 

@@ -3,6 +3,7 @@
 namespace App\Domain\User\Repositories;
 
 use App\Domain\User\Entities\User;
+use Illuminate\Http\JsonResponse;
 
 interface UserRepositoryInterface
 {
