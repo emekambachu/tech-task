@@ -27,6 +27,11 @@ const getUsers = async () => {
     loading.value = false;
 };
 
+const deleteUser = (event) => {
+    console.log("Emit Delete user", event)
+    users.value = users.value.filter(user => user.id !== event.id);
+}
+
 onBeforeMount(() => {
     getUsers();
 });
@@ -80,6 +85,7 @@ onBeforeMount(() => {
                     :key="user.id"
                     :index="index"
                     :user="user"
+                    @delete-user="deleteUser"
                 />
             </tbody>
         </table>

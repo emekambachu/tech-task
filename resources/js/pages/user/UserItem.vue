@@ -1,7 +1,16 @@
 <script setup>
-import {ref, defineProps} from "vue";
+import {ref, defineEmits, defineProps} from "vue";
 import TrashIcon from "@/js/components/Icons/TrashIcon.vue";
 import EditIcon from "@/js/components/Icons/EditIcon.vue";
+import SlideOverModal from "@/js/components/Modals/SlideOverModal.vue";
+import UserForm from "@/js/pages/user/UserForm.vue";
+import apiClient from "@/js/utils/apiClient.js";
+import AnimateSpinIcon from "@/js/components/Icons/AnimateSpinIcon.vue";
+
+const showEditForm = ref(false);
+const showDeleteForm = ref(false);
+const loading = ref(false);
+const deleted = ref(false);
 
 const props = defineProps({
     user: {
@@ -12,7 +21,24 @@ const props = defineProps({
         type: Number,
         required: true
     }
-})
+});
+
+const emit = defineEmits(['delete-user']);
+
+const deleteUser = async () => {
+  loading.value = true;
+  await apiClient.delete(`/users/${props.user.id}`).then((response) => {
+    if (response.data.success) {
+      deleted.value = true;
+      emit("delete-user", props.user.id);
+    }
+  }).catch((error) => {
+    console.log(error);
+  });
+
+  loading.value = false;
+}
+
 </script>
 
 <template>
@@ -43,11 +69,41 @@ const props = defineProps({
         </td>
         <td class="px-6 py-4">
             <div class="flex">
-                <EditIcon width="20" height="20"/>
-                <TrashIcon width="20" height="20"/>
+                <EditIcon width="20" height="20" class="cursor-pointer" @click.prevent="showEditForm = !showEditForm"/>
+                <TrashIcon width="20" height="20" class="cursor-pointer" @click.prevent="showDeleteForm = !showDeleteForm"/>
             </div>
         </td>
     </tr>
+
+    <SlideOverModal
+        title="Update User"
+        :show="showEditForm"
+        @close-modal="showEditForm = false"
+    >
+        <UserForm
+            :user="user"
+            @close-modal="showEditForm = false"
+        />
+    </SlideOverModal>
+
+    <SlideOverModal
+        title="Delete User"
+        :show="showDeleteForm"
+        @close-modal="showDeleteForm = false"
+    >
+        <h3 class="text-center">Are you sure you want to delete {{ user.name + " " + user.surname }}</h3>
+        <p class="text-center">This action cannot be undone.</p>
+        <div v-if="!loading && !deleted" class="flex justify-center mt-4">
+            <button @click.prevent="showDeleteForm = false" class="bg-gray-500 text-white px-4 py-2 rounded">Cancel</button>
+            <button @click.prevent="deleteUser(user.id)" class="bg-red-500 text-white px-4 py-2 rounded ml-2">Delete</button>
+        </div>
+        <div v-else-if="loading && !deleted" class="flex justify-center mt-4">
+          <AnimateSpinIcon class="animate-spin h-5 w-5 text-gray-200" />
+        </div>
+        <div v-else-if="deleted" class="flex justify-center mt-4">
+            <p class="text-rose-400">User deleted successfully.</p>
+        </div>
+    </SlideOverModal>
 </template>
 
 <style scoped>
