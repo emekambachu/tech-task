@@ -2,29 +2,37 @@
 
 namespace App\Application\User\Commands;
 
-use Illuminate\Console\Command;
-
-class CreateUserCommand extends Command
+class CreateUserCommand
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
-    protected $signature = 'app:create-user-command';
+    public string $name;
+    public string $surname;
+    public string $email;
+    public string $phone;
+    public string $country;
+    public string $gender;
+    public string $password;
+    public ?string $selfie;
+    public ?string $introduction;
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
-    protected $description = 'Command description';
-
-    /**
-     * Execute the console command.
-     */
-    public function handle()
-    {
-        //
+    public function __construct(
+        string $name,
+        string $surname,
+        string $email,
+        string $phone,
+        string $country,
+        string $gender,
+        string $password,
+        ?string $selfie = null,
+        ?string $introduction = null
+    ) {
+        $this->name         = $name;
+        $this->surname      = $surname;
+        $this->email        = $email;
+        $this->phone        = $phone;
+        $this->country      = $country;
+        $this->gender       = $gender;
+        $this->password     = $password;
+        $this->selfie       = $selfie;
+        $this->introduction = $introduction;
     }
 }

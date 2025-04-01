@@ -2,29 +2,12 @@
 
 namespace App\Application\User\Commands;
 
-use Illuminate\Console\Command;
-
-class DeleteUserCommand extends Command
+class DeleteUserCommand
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
-    protected $signature = 'app:delete-user-command';
+    public int $id;
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
-    protected $description = 'Command description';
-
-    /**
-     * Execute the console command.
-     */
-    public function handle()
+    public function __construct(int $id)
     {
-        //
+        $this->id = $id;
     }
 }
