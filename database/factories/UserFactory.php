@@ -39,7 +39,7 @@ class UserFactory extends Factory
             'gender' => fake()->randomElement(['male', 'female']),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
-            'selfie' => fake()->imageUrl(),
+            'selfie' => 'https://placehold.co/400',
             'introduction' => fake()->text(200),
             'remember_token' => Str::random(10),
         ];

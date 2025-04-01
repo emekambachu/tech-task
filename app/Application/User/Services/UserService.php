@@ -46,7 +46,7 @@ class UserService implements UserResponseInterface
             throw new UserNotFoundException("User not found");
         }
 
-        // If password is not provided, use the existing one.
+        // If a password is not provided, use the existing one.
         $password = $command->password ?? $existingUser->getPassword();
 
         $user = new User(

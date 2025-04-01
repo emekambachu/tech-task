@@ -1,18 +1,19 @@
 <script setup>
-import { ref } from "vue";
+import {ref, onBeforeMount} from 'vue';
 import UserItem from "@/js/pages/user/UserItem.vue";
 import apiClient from "@/js/utils/apiClient.js";
 import handleErrors from "@/js/utils/handleErrors.js";
 
-const users = [];
+const users = ref([]);
 const loading = ref(false);
 
-const getCourses = async () => {
+const getUsers = async () => {
     loading.value = true;
     try {
         const response = await apiClient.get('/users');
         if(response.data.success){
-            users.value = response.data.data;
+            users.value = response.data.users;
+            console.log(response.data.users);
         }
 
     } catch (error) {
@@ -22,6 +23,10 @@ const getCourses = async () => {
     }
     loading.value = false;
 };
+
+onBeforeMount(() => {
+    getUsers();
+});
 
 </script>
 
@@ -50,9 +55,6 @@ const getCourses = async () => {
                     </th>
                     <th scope="col" class="px-6 py-3">
                         Gender
-                    </th>
-                    <th scope="col" class="px-6 py-3">
-                        Password
                     </th>
                     <th scope="col" class="px-6 py-3">
                         Selfie

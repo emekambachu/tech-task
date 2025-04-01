@@ -36,10 +36,7 @@ const props = defineProps({
             {{ user.gender }}
         </td>
         <td class="px-6 py-4">
-            {{ user.password}}
-        </td>
-        <td class="px-6 py-4">
-            {{ user.selfie }}
+            <img :src="user.selfie" class="w-10 h-10 rounded-full">
         </td>
         <td class="px-6 py-4">
             {{ user.introduction }}
