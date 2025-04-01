@@ -83,7 +83,7 @@ class UserController extends Controller
 
         try {
 
-            if ($request->hasFile('selfie')) {
+            if (!empty($data['selfie']) && $request->hasFile('selfie')) {
                 $path = $request->file('selfie')->store('selfies', 'public');
                 $data['selfie'] = $path;
             }
