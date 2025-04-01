@@ -4,6 +4,7 @@
 namespace Tests\Unit;
 
 use App\Infrastructure\Persistence\EloquentUserRepository;
+use App\Domain\User\Entities\User as DomainUser;
 use Tests\TestCase;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -23,57 +24,90 @@ class EloquentUserRepositoryTest extends TestCase
     public function test_create_user()
     {
         // Arrange: Define data for a new user
-        $data = [
-            'name'     => 'Alice',
-            'email'    => 'alice@example.com',
-            'password' => bcrypt('secret'),
-        ];
+        $name     = 'Alice';
+        $surname  = 'Smith';
+        $email    = 'alice@example.com';
+        $phone    = '1234567890';
+        $country  = 'USA';
+        $gender   = 'female';
+        $password = bcrypt('secret');
 
-        // Act: Create the user via the repository
-        $user = $this->repository->create($data);
+        // Create a DomainUser instance (id can be null for new user)
+        $domainUser = new DomainUser(null, $name, $surname, $email, $phone, $country, $gender, $password, null, null);
 
-        // Assert: Verify that a User was created
-        $this->assertInstanceOf(User::class, $user);
-        $this->assertDatabaseHas('users', ['email' => 'alice@example.com']);
+        // Act: Create the user via the repository using save()
+        $savedUser = $this->repository->save($domainUser);
+
+        // Assert: Verify that a DomainUser was created and persisted in the DB
+        $this->assertInstanceOf(DomainUser::class, $savedUser);
+        $this->assertDatabaseHas('users', ['email' => $email]);
     }
 
     public function test_find_user()
     {
-        // Arrange: Create a user using a factory
-        $user = User::factory()->create();
+        // Arrange: Create a user using a factory (this persists an Eloquent model)
+        $modelUser = User::factory()->create();
 
-        // Act: Retrieve the user using the repository
-        $foundUser = $this->repository->find($user->id);
+        // Act: Retrieve the user using the repository (returns a DomainUser)
+        $foundUser = $this->repository->find($modelUser->id);
 
-        // Assert: Confirm the retrieved user is correct
-        $this->assertInstanceOf(User::class, $foundUser);
-        $this->assertEquals($user->id, $foundUser->id);
+        // Assert: Confirm the retrieved user is a DomainUser and has correct id
+        $this->assertInstanceOf(DomainUser::class, $foundUser);
+        $this->assertEquals($modelUser->id, $foundUser->getId());
     }
 
     public function test_update_user()
     {
-        // Arrange: Create a user
-        $user = User::factory()->create(['name' => 'Bob']);
+        // Arrange: Create a user (persisted as an Eloquent model)
+        $modelUser = User::factory()->create(['name' => 'Bob']);
 
-        // Act: Update the user's name via the repository
-        $updateData = ['name' => 'Robert'];
-        $updatedUser = $this->repository->update($user->id, $updateData);
+        // Build a DomainUser instance from the model with updated data
+        $updatedName = 'Robert';
+        $domainUser = new DomainUser(
+            $modelUser->id,
+            $updatedName,
+            $modelUser->surname,
+            $modelUser->email,
+            $modelUser->phone,
+            $modelUser->country,
+            $modelUser->gender,
+            $modelUser->password,
+            $modelUser->selfie,
+            $modelUser->introduction
+        );
 
-        // Assert: Ensure the update is reflected in the model and database
-        $this->assertEquals('Robert', $updatedUser->name);
-        $this->assertDatabaseHas('users', ['id' => $user->id, 'name' => 'Robert']);
+        // Act: Update the user via the repository using the DomainUser
+        $updatedUser = $this->repository->update($domainUser);
+
+        // Assert: Ensure the update is reflected in the returned DomainUser and DB
+        $this->assertEquals($updatedName, $updatedUser->getName());
+        $this->assertDatabaseHas('users', ['id' => $modelUser->id, 'name' => $updatedName]);
     }
 
     public function test_delete_user()
     {
-        // Arrange: Create a user
-        $user = User::factory()->create();
+        // Arrange: Create a user using a factory
+        $modelUser = User::factory()->create();
+
+        // Build a DomainUser instance from the Eloquent model for deletion
+        $domainUser = new DomainUser(
+            $modelUser->id,
+            $modelUser->name,
+            $modelUser->surname,
+            $modelUser->email,
+            $modelUser->phone,
+            $modelUser->country,
+            $modelUser->gender,
+            $modelUser->password,
+            $modelUser->selfie,
+            $modelUser->introduction
+        );
 
         // Act: Delete the user via the repository
-        $result = $this->repository->delete($user->id);
+        $result = $this->repository->delete($domainUser);
 
-        // Assert: Check that deletion returns true and the user is removed
+        // Assert: Check that deletion returns true and the user is removed from the DB
         $this->assertTrue($result);
-        $this->assertDatabaseMissing('users', ['id' => $user->id]);
+        $this->assertDatabaseMissing('users', ['id' => $modelUser->id]);
     }
 }
