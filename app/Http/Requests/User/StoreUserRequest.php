@@ -2,16 +2,18 @@
 
 namespace App\Http\Requests\User;
 
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\Exceptions\HttpResponseException;
 
 class StoreUserRequest extends FormRequest
 {
-    public function authorize()
+    public function authorize(): true
     {
         return true;
     }
 
-    public function rules()
+    public function rules(): array
     {
         return [
             'name'         => 'required|string|max:255',
@@ -24,5 +26,20 @@ class StoreUserRequest extends FormRequest
             'selfie'       => 'nullable|image|max:2048',
             'introduction' => 'nullable|string',
         ];
+    }
+
+    public function messages(): array
+    {
+        return [
+
+        ];
+    }
+
+    protected function failedValidation(Validator $validator){
+        $message = $validator->errors()->getMessages();
+        throw new HttpResponseException(response()->json([
+            'success' => false,
+            'errors' => $message
+        ], 422));
     }
 }

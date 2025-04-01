@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\User;
 
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Validation\Rule;
 
 class UpdateUserRequest extends FormRequest
@@ -29,5 +31,20 @@ class UpdateUserRequest extends FormRequest
             'selfie'       => 'nullable|image|max:2048|mimes:jpeg,png,jpg',
             'introduction' => 'nullable|string',
         ];
+    }
+
+    public function messages(): array
+    {
+        return [
+
+        ];
+    }
+
+    protected function failedValidation(Validator $validator){
+        $message = $validator->errors()->getMessages();
+        throw new HttpResponseException(response()->json([
+            'success' => false,
+            'errors' => $message
+        ], 422));
     }
 }
