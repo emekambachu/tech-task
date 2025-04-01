@@ -82,6 +82,11 @@ class UserService implements UserResponseInterface
         return $this->userRepository->findAll();
     }
 
+    public function getUser($id): ?User
+    {
+        return $this->userRepository->find($id);
+    }
+
     public function responseError(string $message): JsonResponse
     {
         return response()->json([

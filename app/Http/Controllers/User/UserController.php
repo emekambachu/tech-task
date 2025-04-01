@@ -77,18 +77,21 @@ class UserController extends Controller
 
     /**
      */
+    // app/Http/Controllers/User/UserController.php
     public function update(UpdateUserRequest $request, int $id): JsonResponse
     {
         $data = $request->validated();
 
         try {
-
-            if (!empty($data['selfie']) && $request->hasFile('selfie')) {
+            if ($request->hasFile('selfie')) {
                 $path = $request->file('selfie')->store('selfies', 'public');
                 $data['selfie'] = $path;
+            } else {
+                // Retrieve the previous selfie if no new selfie is uploaded
+                $existingUser = $this->userService->getUser($id);
+                $data['selfie'] = $existingUser ? $existingUser->getSelfie() : null;
             }
 
-            // Hash password if provided; otherwise leave it null.
             if (!empty($data['password'])) {
                 $data['password'] = Hash::make($data['password']);
             } else {
@@ -104,18 +107,18 @@ class UserController extends Controller
                 $data['country'],
                 $data['gender'],
                 $data['password'],
-                $data['selfie'] ?? null,
+                $data['selfie'],
                 $data['introduction'] ?? null
             );
 
             $user = $this->userService->updateUser($command);
             return response()->json([
                 'success' => true,
-                'user' => new UserResource($user),
+                'user' => new \App\Http\Resources\User\UserResource($user),
             ]);
 
-        }catch(\Exception $e){
-            Log::error($e->getMessage());
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error($e->getMessage());
             return $this->userService->responseError("Error updating user");
         }
     }
