@@ -2,9 +2,12 @@
 import {ref, reactive, onBeforeMount} from 'vue';
 import handleErrors from "@/js/utils/handleErrors.js";
 import apiClient from "@/js/utils/apiClient.js";
+import formValidations from "@/js/utils/formValidations.js";
 
-let loading = ref(false);
-let countries = ref([]);
+const loading = ref(false);
+const countries = ref([]);
+let errors = ref({});
+let imagePreview = ref(null);
 
 let form = reactive({
     name: '',
@@ -50,6 +53,52 @@ const fetchCountries = async () => {
     }
 }
 
+const uploadSelfie = (event) => {
+  let validateFileType = formValidations.validateFileType(event.target.files[0], ['jpg', 'jpeg', 'png']);
+  if(!validateFileType){
+    errors.value['selfie'] = ['Incorrect file format. allowed: jpg, jpeg, png'];
+    form.selfie = null;
+    return false;
+  }
+
+  let validateFileSize = formValidations.validateFileSize(event.target.files[0], 2000000);
+  if(!validateFileSize){
+    errors.value['selfie'] = ['File too large, 2mb max'];
+    form.selfie = null;
+    return false;
+  }
+
+  //Assign image and path to this variable
+  form.selfie = event.target.files[0];
+  imagePreview.value = URL.createObjectURL(event.target.files[0]);
+}
+
+const validatePhone = (event) => {
+  if(form.phone === ""){
+    return false
+  }
+  let valid = formValidations.validateMobileNumber(event.target.value);
+  if (!valid) {
+    errors.value.mobile = ["Wrong format, international mobile number required"];
+    return false;
+  }else{
+    errors.value.mobile = [];
+    return true;
+  }
+}
+
+const validateEmailConfirmation = (event, first_value, second_value, first_key, second_key) => {
+
+  let identical = formValidations.emailConfirmation(first_value, second_value);
+  if(!identical){
+    errors.value['password'] = ['Password and confirmation do not match'];
+    return false;
+  }else{
+    errors.value['password'] = [];
+    return true;
+  }
+}
+
 onBeforeMount(() => {
     fetchCountries();
 });
@@ -58,7 +107,17 @@ onBeforeMount(() => {
 
 <template>
     <div>
-        <form @submit.prevent="submitForm" class="max-w-sm mx-auto">
+
+      <div v-if="Object.keys(errors).length" class="card">
+        <p>
+          <span class="text-red-500 font-bold">Error:</span>
+          <span v-for="(error, index) in errors" :key="index" class="text-red-500">
+            {{ error }}
+          </span>
+        </p>
+      </div>
+
+      <form @submit.prevent="submitForm" class="max-w-sm mx-auto">
             <div class="mb-5">
                 <label for="name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Name</label>
                 <input v-model="form.name" type="text" id="name" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="" required />
@@ -111,8 +170,27 @@ onBeforeMount(() => {
             </div>
 
             <div class="mb-5">
-                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white" for="user_avatar">Upload Selfie</label>
-                <input class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" aria-describedby="user_avatar_help" id="user_avatar" type="file">
+                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white" for="user_avatar">Upload Selfie (2mb Max)</label>
+                <input
+                    accept="image/*"
+                    @change="uploadSelfie($event)"
+                    class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" aria-describedby="user_avatar_help" id="user_avatar" type="file"
+                    required
+                >
+
+              <div v-if="form.selfie !== null && !errors?.selfie" class="flex">
+                <img :src="imagePreview" width="100"/>
+                <span @click="form.selfie = null"
+                      class="pl-1 text-red-500 cursor-pointer font-bold"
+                      title="Remove image">
+                  x
+                </span>
+              </div>
+
+              <span v-if="errors.image"
+                    class="text-danger">
+                  {{ errors.image[0] }}
+              </span>
             </div>
 
             <button type="submit" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Submit</button>
